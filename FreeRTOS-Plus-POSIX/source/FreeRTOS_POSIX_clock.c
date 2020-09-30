@@ -49,9 +49,21 @@ extern int snprintf( char * s,
 
 clock_t clock( void )
 {
-    /* This function is currently unsupported. It will always return -1. */
+    TimeOut_t xCurrentTime = { 0 };
+    uint64_t ullTickCount = 0ULL;
 
-    return ( clock_t ) -1;
+    /* Get the current tick count and overflow count. vTaskSetTimeOutState()
+     * is used to get these values because they are both static in tasks.c. */
+    vTaskSetTimeOutState( &xCurrentTime );
+
+    /* Adjust the tick count for the number of times a TickType_t has overflowed.
+     * portMAX_DELAY should be the maximum value of a TickType_t. */
+    ullTickCount = ( uint64_t ) ( xCurrentTime.xOverflowCount ) << ( sizeof( TickType_t ) * 8 );
+
+    /* Add the current tick count. */
+    ullTickCount += xCurrentTime.xTimeOnEntering;
+
+    return ( clock_t ) ullTickCount;
 }
 
 /*-----------------------------------------------------------*/
